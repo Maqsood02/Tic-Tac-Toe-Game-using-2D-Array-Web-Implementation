@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe Game</title>
+    <meta name="description" content="Ultra modern Tic Tac Toe featuring full player score tracking, elegant glassmorphism effects, and a C backend.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1 id="title" class="premium-title">TIC TAC TOE</h1>
+            <p id="subtitle" class="premium-subtitle"></p>
+        </header>
+
+        <!-- PLAYER NAME ENTRY PANEL -->
+        <main id="setup-panel" class="card setup-card fade-in">
+            <h2>Player Configuration</h2>
+            <p>Set player profiles to unlock the scoreboard</p>
+            <form id="player-form">
+                <div class="form-inputs-row">
+                    <div class="input-group">
+                        <label for="player1">Player 1 (X)</label>
+                        <input type="text" id="player1" placeholder="Ex: Alice" required autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="player2">Player 2 (O)</label>
+                        <input type="text" id="player2" placeholder="Ex: Bob" required autocomplete="off">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn primary glow">Start Championship</button>
+                </div>
+            </form>
+        </main>
+
+        <!-- ADVANCED GAMEPLAY DASHBOARD -->
+        <main id="game-panel" class="dashboard hidden fade-in">
+            <!-- SIDE PROFILE FOR PLAYER 1 -->
+            <div id="p1-profile-card" class="player-card x-player active-turn">
+                <div class="symbol-badge">X</div>
+                <div class="player-details">
+                    <h3 id="p1-display-name">Alice</h3>
+                    <span class="role">Player 1</span>
+                    <div class="score-label">Score</div>
+                    <div id="p1-score" class="score-number">0</div>
+                </div>
+            </div>
+
+            <!-- MAIN GRID BOARD -->
+            <div class="game-core">
+                <div class="game-info">
+                    <div id="status-message" class="status-msg">
+                        Make your strategic move
+                    </div>
+                </div>
+
+                <div class="board-container">
+                    <div class="board" id="board">
+                        <div class="cell" data-index="0" id="cell-0"></div>
+                        <div class="cell" data-index="1" id="cell-1"></div>
+                        <div class="cell" data-index="2" id="cell-2"></div>
+                        <div class="cell" data-index="3" id="cell-3"></div>
+                        <div class="cell" data-index="4" id="cell-4"></div>
+                        <div class="cell" data-index="5" id="cell-5"></div>
+                        <div class="cell" data-index="6" id="cell-6"></div>
+                        <div class="cell" data-index="7" id="cell-7"></div>
+                        <div class="cell" data-index="8" id="cell-8"></div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="reset-btn" class="btn secondary">Reset Round</button>
+                    <button id="change-players-btn" class="btn tertiary">Manage Players</button>
+                </div>
+            </div>
+
+            <!-- SIDE PROFILE FOR PLAYER 2 -->
+            <div id="p2-profile-card" class="player-card o-player">
+                <div class="symbol-badge">O</div>
+                <div class="player-details">
+                    <h3 id="p2-display-name">Bob</h3>
+                    <span class="role">Player 2</span>
+                    <div class="score-label">Score</div>
+                    <div id="p2-score" class="score-number">0</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- GAME OVER OVERLAY / VICTORY MODAL -->
+    <div id="modal-overlay" class="modal-overlay hidden fade-in">
+        <div class="modal-card">
+            <div id="modal-icon" class="modal-icon">🏆</div>
+            <h2 id="modal-title">Victory!</h2>
+            <p id="modal-body">Alice won this round!</p>
+            <div class="modal-actions">
+                <button id="modal-next-btn" class="btn primary glow">Next Round</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="toast hidden"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
