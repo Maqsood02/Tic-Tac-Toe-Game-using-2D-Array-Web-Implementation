@@ -532,12 +532,21 @@ header {
 @media (max-width: 960px) {
     .dashboard {
         grid-template-columns: 1fr;
-        gap: 28px;
+        gap: 24px;
+    }
+    #p1-profile-card {
+        order: 1;
+    }
+    #p2-profile-card {
+        order: 2;
+    }
+    .game-core {
+        order: 3;
     }
     .player-card {
         flex-direction: row;
         justify-content: space-between;
-        padding: 24px;
+        padding: 20px 24px;
     }
     .player-details {
         text-align: left;
