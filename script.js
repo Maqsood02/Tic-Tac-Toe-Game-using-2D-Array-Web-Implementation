@@ -8,6 +8,79 @@ document.addEventListener('DOMContentLoaded', () => {
     let boardState = '         '; // 9 empty spaces
     let isGameOver = false;
 
+    // AUDIO GENERATORS
+    let bgMusicContext = null;
+    let bgMusicInterval = null;
+
+    function startBackgroundMusic() {
+        if (bgMusicContext) {
+            if (bgMusicContext.state === 'suspended') {
+                bgMusicContext.resume();
+            }
+            return;
+        }
+        try {
+            bgMusicContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (bgMusicContext.state === 'suspended') {
+                bgMusicContext.resume();
+            }
+            let noteIndex = 0;
+            const notes = [220, 246.94, 261.63, 293.66, 329.63, 392]; // A minor pentatonic
+            
+            bgMusicInterval = setInterval(() => {
+                if (!bgMusicContext) return;
+                if (bgMusicContext.state === 'suspended') {
+                    bgMusicContext.resume();
+                }
+                const osc = bgMusicContext.createOscillator();
+                const gain = bgMusicContext.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[noteIndex], bgMusicContext.currentTime);
+                
+                gain.gain.setValueAtTime(0, bgMusicContext.currentTime);
+                gain.gain.linearRampToValueAtTime(0.015, bgMusicContext.currentTime + 0.5);
+                gain.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 2.5);
+                
+                osc.connect(gain);
+                gain.connect(bgMusicContext.destination);
+                
+                osc.start();
+                osc.stop(bgMusicContext.currentTime + 2.5);
+                
+                noteIndex = (noteIndex + 1) % notes.length;
+            }, 3000);
+        } catch (e) {
+            console.warn('AudioContext failed:', e);
+        }
+    }
+
+    // Unblock audio autoplay policy on any direct interaction
+    document.addEventListener('click', () => {
+        if (bgMusicContext && bgMusicContext.state === 'suspended') {
+            bgMusicContext.resume();
+        }
+    }, { once: true });
+
+    function playClickSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.1);
+        } catch (e) {
+            console.warn('AudioContext blocked:', e);
+        }
+    }
+
     // DOM ELEMENTS
     const setupPanel = document.getElementById('setup-panel');
     const gamePanel = document.getElementById('game-panel');
@@ -54,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPanel.classList.add('hidden');
         gamePanel.classList.remove('hidden');
         initGame();
+        startBackgroundMusic();
     });
 
     // START / INITIALIZE GAME STATE
@@ -99,6 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Cell is already occupied.');
             return;
         }
+
+        playClickSound();
 
         let result;
         try {
