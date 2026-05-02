@@ -531,41 +531,57 @@ header {
 /* RESPONSIVE DESIGN */
 @media (max-width: 960px) {
     .dashboard {
-        grid-template-columns: 1fr;
-        gap: 24px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
     }
     #p1-profile-card {
-        order: 1;
+        grid-column: 1;
+        grid-row: 1;
     }
     #p2-profile-card {
-        order: 2;
+        grid-column: 2;
+        grid-row: 1;
     }
     .game-core {
-        order: 3;
+        grid-column: 1 / span 2;
+        grid-row: 2;
     }
     .player-card {
-        flex-direction: row;
-        justify-content: space-between;
-        padding: 20px 24px;
+        flex-direction: column;
+        justify-content: center;
+        padding: 16px;
+        gap: 12px;
+        text-align: center;
+    }
+    .symbol-badge {
+        width: 56px;
+        height: 56px;
+        font-size: 1.85rem;
+        margin: 0 auto;
     }
     .player-details {
-        text-align: left;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        gap: 8px;
+        text-align: center;
+    }
+    .player-details h3 {
+        font-size: 1.15rem;
+        margin-bottom: 4px;
     }
     .player-details .role {
-        margin-bottom: 0;
+        font-size: 0.75rem;
+        margin-bottom: 8px;
+    }
+    .score-label {
+        font-size: 0.7rem;
     }
     .score-number {
-        font-size: 2.25rem;
+        font-size: 1.85rem;
     }
 }
 
 @media (max-width: 640px) {
     body {
-        padding: 16px 12px;
+        padding: 16px 8px;
     }
     .card {
         padding: 24px 16px;
@@ -576,15 +592,15 @@ header {
         margin-bottom: 24px;
     }
     .premium-title {
-        font-size: 2.25rem;
+        font-size: 2.1rem;
     }
     .board {
-        width: 300px;
-        height: 300px;
+        width: 290px;
+        height: 290px;
         gap: 10px;
     }
     .cell {
-        font-size: 2.25rem;
+        font-size: 2.15rem;
     }
     .actions {
         flex-direction: column;
