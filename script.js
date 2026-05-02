@@ -8,78 +8,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let boardState = '         '; // 9 empty spaces
     let isGameOver = false;
 
-    // AUDIO GENERATORS
-    let bgMusicContext = null;
-    let bgMusicInterval = null;
+    // AUDIO HANDLERS
+    const bgMusicEl = document.getElementById('bg-music');
+    const clickSoundEl = document.getElementById('click-sound');
 
     function startBackgroundMusic() {
-        if (bgMusicContext) {
-            if (bgMusicContext.state === 'suspended') {
-                bgMusicContext.resume();
-            }
-            return;
-        }
-        try {
-            bgMusicContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (bgMusicContext.state === 'suspended') {
-                bgMusicContext.resume();
-            }
-            let noteIndex = 0;
-            const notes = [220, 246.94, 261.63, 293.66, 329.63, 392]; // A minor pentatonic
-            
-            bgMusicInterval = setInterval(() => {
-                if (!bgMusicContext) return;
-                if (bgMusicContext.state === 'suspended') {
-                    bgMusicContext.resume();
-                }
-                const osc = bgMusicContext.createOscillator();
-                const gain = bgMusicContext.createGain();
-                
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(notes[noteIndex], bgMusicContext.currentTime);
-                
-                gain.gain.setValueAtTime(0, bgMusicContext.currentTime);
-                gain.gain.linearRampToValueAtTime(0.015, bgMusicContext.currentTime + 0.5);
-                gain.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 2.5);
-                
-                osc.connect(gain);
-                gain.connect(bgMusicContext.destination);
-                
-                osc.start();
-                osc.stop(bgMusicContext.currentTime + 2.5);
-                
-                noteIndex = (noteIndex + 1) % notes.length;
-            }, 3000);
-        } catch (e) {
-            console.warn('AudioContext failed:', e);
+        if (bgMusicEl) {
+            bgMusicEl.volume = 0.25;
+            bgMusicEl.play().catch(err => {
+                console.warn('Autoplay prevented. Music will start on the first user interaction.', err);
+            });
         }
     }
-
-    // Unblock audio autoplay policy on any direct interaction
-    document.addEventListener('click', () => {
-        if (bgMusicContext && bgMusicContext.state === 'suspended') {
-            bgMusicContext.resume();
-        }
-    }, { once: true });
 
     function playClickSound() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.1);
-        } catch (e) {
-            console.warn('AudioContext blocked:', e);
+        if (clickSoundEl) {
+            clickSoundEl.currentTime = 0;
+            clickSoundEl.volume = 0.4;
+            clickSoundEl.play().catch(err => console.warn('Sound effect blocked', err));
         }
     }
+
+    // Auto-unblock autoplay policy on any user interaction
+    document.addEventListener('click', () => {
+        if (bgMusicEl && bgMusicEl.paused) {
+            bgMusicEl.play().catch(err => console.warn('Autoplay policy', err));
+        }
+    }, { once: true });
 
     // DOM ELEMENTS
     const setupPanel = document.getElementById('setup-panel');
