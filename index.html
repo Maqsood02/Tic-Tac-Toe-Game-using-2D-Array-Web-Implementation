@@ -23,35 +23,35 @@
             <h2>Player Configuration</h2>
             <p>Set player profiles to unlock the scoreboard</p>
             <form id="player-form">
-                <div class="form-inputs-row" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                <div class="form-inputs-row">
                     <div class="input-group">
                         <label for="game-mode">Game Mode</label>
-                        <select id="game-mode" style="width:100%; padding:14px; background:#1e293b; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:12px; font-family:inherit; font-size: 0.95rem;">
+                        <select id="game-mode" class="custom-select">
                             <option value="pvp">👥 2 Players (Local)</option>
                             <option value="pve">🤖 VS Robot (AI)</option>
                         </select>
                     </div>
-                    <div class="input-row" style="display: flex; gap: 16px;">
-                        <div class="input-group" style="flex: 1;">
+                    <div class="input-row">
+                        <div class="input-group">
                             <label for="player1">Player 1 (X)</label>
                             <input type="text" id="player1" placeholder="Ex: Alice" required autocomplete="off">
                         </div>
-                        <div class="input-group" style="flex: 1;" id="p2-input-wrapper">
+                        <div class="input-group" id="p2-input-wrapper">
                             <label for="player2">Player 2 (O)</label>
                             <input type="text" id="player2" placeholder="Ex: Bob" required autocomplete="off">
                         </div>
                     </div>
-                    <div class="input-row" style="display: flex; gap: 16px;">
-                        <div class="input-group" style="flex: 1;">
+                    <div class="input-row">
+                        <div class="input-group">
                             <label for="grid-size">Board Size</label>
-                            <select id="grid-size" style="width:100%; padding:14px; background:#1e293b; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:12px; font-family:inherit; font-size: 0.95rem;">
+                            <select id="grid-size" class="custom-select">
                                 <option value="3">3 x 3 Grid</option>
                                 <option value="5">5 x 5 Grid</option>
                             </select>
                         </div>
-                        <div class="input-group" style="flex: 1;">
+                        <div class="input-group">
                             <label for="target-rounds">Rounds to Win (Optional)</label>
-                            <input type="number" id="target-rounds" placeholder="Ex: 3" min="1" max="99" style="width:100%; padding:14px; background:#1e293b; color:white; border:1px solid rgba(255,255,255,0.1); border-radius:12px; font-family:inherit; font-size: 0.95rem;">
+                            <input type="number" id="target-rounds" placeholder="Ex: 3" min="1" max="99">
                         </div>
                     </div>
                 </div>
