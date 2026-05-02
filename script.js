@@ -24,42 +24,132 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bgMusicContext.state === 'suspended') {
                 bgMusicContext.resume();
             }
+
             let noteIndex = 0;
-            const notes = [220, 246.94, 261.63, 293.66, 329.63, 392]; // A minor pentatonic
-            
-            bgMusicInterval = setInterval(() => {
+            // Catchy, rich continuous song melody and bass notes
+            const melody = [
+                329.63, 392.00, 329.63, 440.00, 392.00, 329.63, 293.66, 261.63,
+                220.00, 246.94, 261.63, 329.63, 293.66, 261.63, 220.00, 196.00
+            ];
+            const bass = [
+                110.00, 110.00, 130.81, 130.81, 146.83, 146.83, 97.99, 97.99,
+                110.00, 110.00, 130.81, 130.81, 146.83, 146.83, 97.99, 97.99
+            ];
+
+            function playSongStep() {
                 if (!bgMusicContext) return;
                 if (bgMusicContext.state === 'suspended') {
                     bgMusicContext.resume();
                 }
-                const osc = bgMusicContext.createOscillator();
-                const gain = bgMusicContext.createGain();
-                
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(notes[noteIndex], bgMusicContext.currentTime);
-                
-                gain.gain.setValueAtTime(0, bgMusicContext.currentTime);
-                gain.gain.linearRampToValueAtTime(0.04, bgMusicContext.currentTime + 0.4);
-                gain.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 2.2);
-                
-                osc.connect(gain);
-                gain.connect(bgMusicContext.destination);
-                
-                osc.start();
-                osc.stop(bgMusicContext.currentTime + 2.2);
-                
-                noteIndex = (noteIndex + 1) % notes.length;
-            }, 2500);
 
-            // Unlock audio on first window click just in case
+                // Melody oscillator
+                const oscMelody = bgMusicContext.createOscillator();
+                const gainMelody = bgMusicContext.createGain();
+                oscMelody.type = 'triangle';
+                oscMelody.frequency.setValueAtTime(melody[noteIndex], bgMusicContext.currentTime);
+
+                gainMelody.gain.setValueAtTime(0, bgMusicContext.currentTime);
+                gainMelody.gain.linearRampToValueAtTime(0.04, bgMusicContext.currentTime + 0.05);
+                gainMelody.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 0.45);
+
+                oscMelody.connect(gainMelody);
+                gainMelody.connect(bgMusicContext.destination);
+                oscMelody.start();
+                oscMelody.stop(bgMusicContext.currentTime + 0.45);
+
+                // Bass oscillator
+                const oscBass = bgMusicContext.createOscillator();
+                const gainBass = bgMusicContext.createGain();
+                oscBass.type = 'sine';
+                oscBass.frequency.setValueAtTime(bass[noteIndex], bgMusicContext.currentTime);
+
+                gainBass.gain.setValueAtTime(0, bgMusicContext.currentTime);
+                gainBass.gain.linearRampToValueAtTime(0.06, bgMusicContext.currentTime + 0.1);
+                gainBass.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 0.5);
+
+                oscBass.connect(gainBass);
+                gainBass.connect(bgMusicContext.destination);
+                oscBass.start();
+                oscBass.stop(bgMusicContext.currentTime + 0.5);
+
+                noteIndex = (noteIndex + 1) % melody.length;
+            }
+
+            playSongStep();
+            bgMusicInterval = setInterval(playSongStep, 350); // Fast continuous tempo!
+
+            // Unlock audio on first window click to allow autoplay
             window.addEventListener('click', () => {
-                if (bgMusicContext && bgMusicContext.state === 'suspended') {
+                if (!bgMusicContext) {
+                    startBackgroundMusic();
+                } else if (bgMusicContext.state === 'suspended') {
                     bgMusicContext.resume();
                 }
             }, { once: true });
 
         } catch (e) {
             console.warn('AudioContext failed:', e);
+        }
+    }
+
+    function stopBackgroundMusic() {
+        if (bgMusicInterval) {
+            clearInterval(bgMusicInterval);
+            bgMusicInterval = null;
+        }
+        if (bgMusicContext) {
+            try {
+                bgMusicContext.close();
+            } catch (e) {}
+            bgMusicContext = null;
+        }
+    }
+
+    function playVictorySound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [261.63, 329.63, 392.00, 523.25, 659.25]; // Uplifting ascending C Major arpeggio
+            notes.forEach((note, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(note, ctx.currentTime + (i * 0.12));
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime + (i * 0.12));
+                gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + (i * 0.12) + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (i * 0.12) + 0.55);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + (i * 0.12));
+                osc.stop(ctx.currentTime + (i * 0.12) + 0.55);
+            });
+        } catch (e) {
+            console.warn('Victory audio blocked:', e);
+        }
+    }
+
+    function playDrawSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [293.66, 329.63, 261.63, 196.00]; // Rich melodic descending chords for ties
+            notes.forEach((note, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(note, ctx.currentTime + (i * 0.15));
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime + (i * 0.15));
+                gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + (i * 0.15) + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (i * 0.15) + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + (i * 0.15));
+                osc.stop(ctx.currentTime + (i * 0.15) + 0.5);
+            });
+        } catch (e) {
+            console.warn('Draw audio blocked:', e);
         }
     }
 
@@ -128,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPanel.classList.add('hidden');
         gamePanel.classList.remove('hidden');
         initGame();
-        startBackgroundMusic();
+        stopBackgroundMusic();
     });
 
     // START / INITIALIZE GAME STATE
@@ -259,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalBody.innerHTML = `Congratulations <strong>${winnerName}</strong>! You won this round.`;
                 modalOverlay.classList.remove('hidden');
 
+                playVictorySound();
                 disableBoardEvents();
             } else if (result.draw) {
                 isGameOver = true;
@@ -269,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalBody.innerHTML = `Great effort by both players! The game is a tie.`;
                 modalOverlay.classList.remove('hidden');
 
+                playDrawSound();
                 disableBoardEvents();
             } else {
                 // Game continues, switch player
@@ -316,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPanel.classList.remove('hidden');
         player1Input.value = '';
         player2Input.value = '';
+        startBackgroundMusic();
         showToast('Set new player names.');
     });
 
@@ -333,4 +426,16 @@ document.addEventListener('DOMContentLoaded', () => {
             toast.classList.add('hidden');
         }, 3000);
     }
+
+    startBackgroundMusic();
+
+    ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            if (!bgMusicContext) {
+                startBackgroundMusic();
+            } else if (bgMusicContext.state === 'suspended') {
+                bgMusicContext.resume();
+            }
+        }, { once: true });
+    });
 });
