@@ -5,8 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let p1Score = 0;
     let p2Score = 0;
     let currentSymbol = 'X';
-    let boardState = '         '; // 9 empty spaces
+    let boardState = []; 
     let isGameOver = false;
+    let gridSize = 3;
+    let gameMode = 'pvp';
+    let targetRounds = null;
 
     // AUDIO GENERATORS
     let bgMusicContext = null;
@@ -178,6 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerForm = document.getElementById('player-form');
     const player1Input = document.getElementById('player1');
     const player2Input = document.getElementById('player2');
+    const gameModeSelect = document.getElementById('game-mode');
+    const gridSizeSelect = document.getElementById('grid-size');
+    const targetRoundsInput = document.getElementById('target-rounds');
+    const p2InputWrapper = document.getElementById('p2-input-wrapper');
 
     const p1DisplayName = document.getElementById('p1-display-name');
     const p2DisplayName = document.getElementById('p2-display-name');
@@ -202,11 +209,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalBody = document.getElementById('modal-body');
     const modalNextBtn = document.getElementById('modal-next-btn');
 
+    // GAME MODE CHANGE LISTENER
+    if (gameModeSelect) {
+        gameModeSelect.addEventListener('change', () => {
+            if (gameModeSelect.value === 'pve') {
+                p2InputWrapper.style.display = 'none';
+                player2Input.required = false;
+            } else {
+                p2InputWrapper.style.display = 'block';
+                player2Input.required = true;
+            }
+        });
+    }
+
     // SETUP SUBMISSION HANDLER
     playerForm.addEventListener('submit', (e) => {
         e.preventDefault();
         p1Name = player1Input.value.trim() || 'Player 1';
-        p2Name = player2Input.value.trim() || 'Player 2';
+        gameMode = gameModeSelect ? gameModeSelect.value : 'pvp';
+        gridSize = gridSizeSelect ? parseInt(gridSizeSelect.value) : 3;
+        targetRounds = targetRoundsInput && targetRoundsInput.value ? parseInt(targetRoundsInput.value) : null;
+
+        if (gameMode === 'pve') {
+            p2Name = 'Robot 🤖';
+        } else {
+            p2Name = player2Input.value.trim() || 'Player 2';
+        }
+
         p1Score = 0;
         p2Score = 0;
 
@@ -214,6 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
         p2DisplayName.textContent = p2Name;
         p1ScoreEl.textContent = p1Score;
         p2ScoreEl.textContent = p2Score;
+
+        const boardEl = document.getElementById('board');
+        if (boardEl) {
+            boardEl.style.setProperty('--grid-size', gridSize);
+            boardEl.style.setProperty('--cell-font-size', gridSize === 5 ? '1.85rem' : '2.75rem');
+        }
 
         setupPanel.classList.add('hidden');
         gamePanel.classList.remove('hidden');
@@ -223,18 +258,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // START / INITIALIZE GAME STATE
     function initGame() {
-        boardState = '         ';
+        boardState = Array(gridSize * gridSize).fill(' ');
         currentSymbol = 'X';
         isGameOver = false;
 
         updateTurnDisplay();
         statusMessage.textContent = 'Championship has begun! Tap to play';
 
-        cells.forEach(cell => {
-            cell.textContent = '';
-            cell.className = 'cell';
-            cell.addEventListener('click', handleCellClick);
-        });
+        const boardEl = document.getElementById('board');
+        if (boardEl) {
+            boardEl.innerHTML = '';
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${i}`;
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                boardEl.appendChild(cell);
+            }
+        }
     }
 
     // UPDATE DISPLAY LABELS
@@ -254,127 +296,183 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // CLICK CELL HANDLER
-    async function handleCellClick(e) {
+    function handleCellClick(e) {
         if (isGameOver) return;
         const cell = e.currentTarget;
         const index = parseInt(cell.getAttribute('data-index'));
 
-        // Local check to prevent unnecessary requests
-        if (boardState[index] !== ' ') {
-            showToast('Cell is already occupied.');
-            return;
-        }
+        if (boardState[index] !== ' ') return;
 
+        // Player makes move
+        makeMove(index);
+    }
+
+    function makeMove(index) {
+        if (isGameOver || boardState[index] !== ' ') return;
+
+        boardState[index] = currentSymbol;
+        renderBoardState();
         playClickSound();
 
-        let result;
-        try {
-            const backendUrl = window.location.port === '3000' ? '/api/move' : 'http://localhost:3000/api/move';
-            const response = await fetch(backendUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    board: boardState,
-                    symbol: currentSymbol,
-                    move: index
-                })
-            });
+        // Win check
+        if (checkWin(currentSymbol)) {
+            isGameOver = true;
+            const winnerName = currentSymbol === 'X' ? p1Name : p2Name;
 
-            if (response.ok) {
-                result = await response.json();
+            if (currentSymbol === 'X') {
+                p1Score++;
+                p1ScoreEl.textContent = p1Score;
+            } else {
+                p2Score++;
+                p2ScoreEl.textContent = p2Score;
             }
-        } catch (error) {
-            console.warn('Backend not accessible. Proceeding with client-side fallback logic.');
-        }
 
-        // JS Fallback if fetch failed or threw an error (perfect for static hosting like Vercel)
-        if (!result) {
-            const chars = boardState.split('');
-            chars[index] = currentSymbol;
-            const newBoardStr = chars.join('');
-
-            // Parse into 2D array
-            const board2D = [
-                [chars[0], chars[1], chars[2]],
-                [chars[3], chars[4], chars[5]],
-                [chars[6], chars[7], chars[8]]
-            ];
-
-            const isWin = (sym) => {
-                for (let i = 0; i < 3; i++) {
-                    if (board2D[i][0] === sym && board2D[i][1] === sym && board2D[i][2] === sym) return true;
-                    if (board2D[0][i] === sym && board2D[1][i] === sym && board2D[2][i] === sym) return true;
-                }
-                if (board2D[0][0] === sym && board2D[1][1] === sym && board2D[2][2] === sym) return true;
-                if (board2D[0][2] === sym && board2D[1][1] === sym && board2D[2][0] === sym) return true;
-                return false;
-            };
-
-            const hasEmpty = chars.some(c => c === ' ');
-
-            result = {
-                valid: true,
-                board: newBoardStr,
-                win: isWin(currentSymbol),
-                draw: !isWin(currentSymbol) && !hasEmpty,
-                msg: 'Move processed locally.'
-            };
-        }
-
-        if (!result.valid) {
-            showToast(result.msg || 'Invalid move attempt.');
-            return;
-        }
-
-            // Update local state and DOM with result from C executable
-            boardState = result.board;
-            renderBoardState();
-
-            if (result.win) {
-                isGameOver = true;
-                const winnerName = currentSymbol === 'X' ? p1Name : p2Name;
+            // Check if tournament target rounds met
+            if (targetRounds && (p1Score >= targetRounds || p2Score >= targetRounds)) {
+                modalIcon.textContent = '👑';
+                modalTitle.textContent = 'Grand Champion!';
+                modalBody.innerHTML = `🏆 Amazing! <strong>${winnerName}</strong> reached ${targetRounds} wins first and is the Ultimate Champion!`;
                 
-                // Update score
-                if (currentSymbol === 'X') {
-                    p1Score++;
-                    p1ScoreEl.textContent = p1Score;
-                } else {
-                    p2Score++;
-                    p2ScoreEl.textContent = p2Score;
-                }
-
-                // Show modal overlay
+                // Clear scores on overall win
+                p1Score = 0;
+                p2Score = 0;
+                p1ScoreEl.textContent = '0';
+                p2ScoreEl.textContent = '0';
+            } else {
                 modalIcon.textContent = '🏆';
                 modalTitle.textContent = 'Victory!';
                 modalBody.innerHTML = `Congratulations <strong>${winnerName}</strong>! You won this round.`;
-                modalOverlay.classList.remove('hidden');
-
-                playVictorySound();
-                disableBoardEvents();
-            } else if (result.draw) {
-                isGameOver = true;
-
-                // Show draw overlay
-                modalIcon.textContent = '🤝';
-                modalTitle.textContent = 'Draw';
-                modalBody.innerHTML = `Great effort by both players! The game is a tie.`;
-                modalOverlay.classList.remove('hidden');
-
-                playDrawSound();
-                disableBoardEvents();
-            } else {
-                // Game continues, switch player
-                currentSymbol = currentSymbol === 'X' ? 'O' : 'X';
-                updateTurnDisplay();
             }
+
+            modalOverlay.classList.remove('hidden');
+            playVictorySound();
+            return;
+        }
+
+        // Draw check
+        if (boardState.every(c => c !== ' ')) {
+            isGameOver = true;
+            modalIcon.textContent = '🤝';
+            modalTitle.textContent = 'Draw';
+            modalBody.innerHTML = `Great effort by both players! The round is a tie.`;
+            modalOverlay.classList.remove('hidden');
+            playDrawSound();
+            return;
+        }
+
+        // Move to next turn
+        currentSymbol = currentSymbol === 'X' ? 'O' : 'X';
+        updateTurnDisplay();
+
+        // Robot AI Move trigger
+        if (currentSymbol === 'O' && gameMode === 'pve' && !isGameOver) {
+            setTimeout(makeRobotMove, 500);
+        }
     }
 
-    // RENDER CELL STATUS ACCORDING TO BOARD STRING
+    function makeRobotMove() {
+        if (isGameOver || currentSymbol !== 'O') return;
+
+        // Collect all empty cell indexes
+        const empties = [];
+        for (let i = 0; i < boardState.length; i++) {
+            if (boardState[i] === ' ') empties.push(i);
+        }
+
+        if (empties.length === 0) return;
+
+        // Try simple winning/blocking moves for AI
+        let bestMove = -1;
+
+        // 1. Can Robot win immediately?
+        for (const idx of empties) {
+            boardState[idx] = 'O';
+            if (checkWin('O')) {
+                boardState[idx] = ' ';
+                bestMove = idx;
+                break;
+            }
+            boardState[idx] = ' ';
+        }
+
+        // 2. Can Player 1 win immediately? Block them!
+        if (bestMove === -1) {
+            for (const idx of empties) {
+                boardState[idx] = 'X';
+                if (checkWin('X')) {
+                    boardState[idx] = ' ';
+                    bestMove = idx;
+                    break;
+                }
+                boardState[idx] = ' ';
+            }
+        }
+
+        // 3. Fallback: random move
+        if (bestMove === -1) {
+            bestMove = empties[Math.floor(Math.random() * empties.length)];
+        }
+
+        makeMove(bestMove);
+    }
+
+    function checkWin(sym) {
+        const winLength = gridSize === 5 ? 4 : 3;
+
+        // Check rows
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c <= gridSize - winLength; c++) {
+                let count = 0;
+                for (let k = 0; k < winLength; k++) {
+                    if (boardState[r * gridSize + (c + k)] === sym) count++;
+                }
+                if (count === winLength) return true;
+            }
+        }
+
+        // Check columns
+        for (let c = 0; c < gridSize; c++) {
+            for (let r = 0; r <= gridSize - winLength; r++) {
+                let count = 0;
+                for (let k = 0; k < winLength; k++) {
+                    if (boardState[(r + k) * gridSize + c] === sym) count++;
+                }
+                if (count === winLength) return true;
+            }
+        }
+
+        // Check diagonals (top-left to bottom-right)
+        for (let r = 0; r <= gridSize - winLength; r++) {
+            for (let c = 0; c <= gridSize - winLength; c++) {
+                let count = 0;
+                for (let k = 0; k < winLength; k++) {
+                    if (boardState[(r + k) * gridSize + (c + k)] === sym) count++;
+                }
+                if (count === winLength) return true;
+            }
+        }
+
+        // Check diagonals (top-right to bottom-left)
+        for (let r = 0; r <= gridSize - winLength; r++) {
+            for (let c = winLength - 1; c < gridSize; c++) {
+                let count = 0;
+                for (let k = 0; k < winLength; k++) {
+                    if (boardState[(r + k) * gridSize + (c - k)] === sym) count++;
+                }
+                if (count === winLength) return true;
+            }
+        }
+
+        return false;
+    }
+
+    // RENDER CELL STATUS
     function renderBoardState() {
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < gridSize * gridSize; i++) {
             const char = boardState[i];
             const cell = document.getElementById(`cell-${i}`);
-            
+            if (!cell) continue;
+
             if (char === 'X') {
                 cell.textContent = 'X';
                 cell.className = 'cell x-mark disabled';
@@ -386,14 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.className = 'cell';
             }
         }
-    }
-
-    // LOCK BOARD
-    function disableBoardEvents() {
-        cells.forEach(cell => {
-            cell.classList.add('disabled');
-            cell.removeEventListener('click', handleCellClick);
-        });
     }
 
     // RESTART CURRENT PLAYERS
