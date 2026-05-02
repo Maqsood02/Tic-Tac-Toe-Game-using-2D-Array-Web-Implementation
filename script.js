@@ -45,11 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Melody oscillator
                 const oscMelody = bgMusicContext.createOscillator();
                 const gainMelody = bgMusicContext.createGain();
-                oscMelody.type = 'triangle';
+                oscMelody.type = 'sawtooth';
                 oscMelody.frequency.setValueAtTime(melody[noteIndex], bgMusicContext.currentTime);
 
                 gainMelody.gain.setValueAtTime(0, bgMusicContext.currentTime);
-                gainMelody.gain.linearRampToValueAtTime(0.08, bgMusicContext.currentTime + 0.05);
+                gainMelody.gain.linearRampToValueAtTime(0.3, bgMusicContext.currentTime + 0.05);
                 gainMelody.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 0.45);
 
                 oscMelody.connect(gainMelody);
@@ -60,11 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Bass oscillator
                 const oscBass = bgMusicContext.createOscillator();
                 const gainBass = bgMusicContext.createGain();
-                oscBass.type = 'sine';
+                oscBass.type = 'triangle';
                 oscBass.frequency.setValueAtTime(bass[noteIndex], bgMusicContext.currentTime);
 
                 gainBass.gain.setValueAtTime(0, bgMusicContext.currentTime);
-                gainBass.gain.linearRampToValueAtTime(0.12, bgMusicContext.currentTime + 0.1);
+                gainBass.gain.linearRampToValueAtTime(0.35, bgMusicContext.currentTime + 0.1);
                 gainBass.gain.exponentialRampToValueAtTime(0.0001, bgMusicContext.currentTime + 0.5);
 
                 oscBass.connect(gainBass);
